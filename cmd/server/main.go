@@ -35,6 +35,6 @@ func main() {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt)
 	<-signalChan
-	fmt.Println("Shutting down...")
+	fmt.Println("Shutting down server...")
 	conn.Close()
 }
