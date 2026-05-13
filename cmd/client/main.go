@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"os"
-	"os/signal"
 
 	"github.com/pjjimiso/learn-pub-sub-starter/internal/gamelogic"
 	"github.com/pjjimiso/learn-pub-sub-starter/internal/pubsub"
@@ -35,12 +33,41 @@ func main() {
 		pubsub.SimpleQueueTransient,
 	)
 	if err != nil {
-		fmt.Println("Failed to declare/bind queue: %v", err)
+		fmt.Println("Failed to declare/bind queue:", err)
 	}
 
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt)
-	<-signalChan
-	fmt.Println("Shutting down client...")
-	conn.Close()
+	gamestate := gamelogic.NewGameState(username)
+
+	for {
+		input := gamelogic.GetInput()
+		if len(input) == 0 {
+			continue
+		}
+		switch input[0] {
+		case "spawn":
+			err := gamestate.CommandSpawn(input)
+			if err != nil {
+				fmt.Println("Failed to spawn unit:", err)
+				continue
+			}
+		case "move":
+			_, err := gamestate.CommandMove(input)
+			if err != nil {
+				fmt.Println("Failed to move unit:", err)
+				continue
+			}
+			// TODO: publish move
+		case "status":
+			gamestate.CommandStatus()
+		case "help":
+			gamelogic.PrintClientHelp()
+		case "spam":
+			fmt.Println("Spamming not allowed yet!")
+		case "quit":
+			gamelogic.PrintQuit()
+			return
+		default:
+			fmt.Println("Unknown command")
+		}
+	}
 }
