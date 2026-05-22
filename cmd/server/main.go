@@ -25,6 +25,14 @@ func main() {
 		fmt.Println("Failed to open a new channel:", err)
 	}
 
+	_, _, err = pubsub.DeclareAndBind(
+		conn,
+		routing.ExchangePerilTopic,
+		routing.GameLogSlug,
+		"game_logs.*",
+		pubsub.SimpleQueueDurable,
+	)
+
 	gamelogic.PrintServerHelp()
 	for {
 		input := gamelogic.GetInput()
