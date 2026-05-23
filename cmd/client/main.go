@@ -9,6 +9,13 @@ import (
 	"github.com/pjjimiso/learn-pub-sub-starter/internal/routing"
 )
 
+func handlerPause(gs *gamelogic.GameState) func(routing.PlayingState) {
+	return func(state routing.PlayingState) {
+		defer fmt.Print("> ")
+		gs.HandlePause(state)
+	}
+}
+
 func main() {
 	fmt.Println("Starting Peril client...")
 
@@ -25,18 +32,19 @@ func main() {
 		fmt.Println("Invalid username:", err)
 	}
 
-	_, _, err = pubsub.DeclareAndBind(
+	gamestate := gamelogic.NewGameState(username)
+
+	err = pubsub.SubscribeJSON(
 		conn,
 		routing.ExchangePerilDirect,
 		routing.PauseKey+fmt.Sprintf(".%s", username),
 		routing.PauseKey,
 		pubsub.SimpleQueueTransient,
+		handlerPause(gamestate),
 	)
 	if err != nil {
 		fmt.Println("Failed to declare/bind queue:", err)
 	}
-
-	gamestate := gamelogic.NewGameState(username)
 
 	for {
 		input := gamelogic.GetInput()
