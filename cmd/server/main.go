@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"log"
 
 	"github.com/pjjimiso/learn-pub-sub-starter/internal/gamelogic"
 	"github.com/pjjimiso/learn-pub-sub-starter/internal/pubsub"
@@ -14,7 +15,7 @@ func main() {
 	connectionString := "amqp://guest:guest@localhost:5672/"
 	conn, err := amqp.Dial(connectionString)
 	if err != nil {
-		fmt.Println("Failed to create rabbitMQ connection:", err)
+		log.Fatalf("could not connect to rabbitMQ: %v", err)
 	}
 	defer conn.Close()
 	fmt.Println("Connection successful!")
@@ -22,7 +23,7 @@ func main() {
 	// Open channel
 	channel, err := conn.Channel()
 	if err != nil {
-		fmt.Println("Failed to open a new channel:", err)
+		log.Fatalf("could not open channel: %v", err)
 	}
 
 	_, _, err = pubsub.DeclareAndBind(
@@ -34,6 +35,7 @@ func main() {
 	)
 
 	gamelogic.PrintServerHelp()
+
 	for {
 		input := gamelogic.GetInput()
 		if len(input) == 0 {
@@ -51,7 +53,7 @@ func main() {
 				},
 			)
 			if err != nil {
-				fmt.Println("Could not publish message:", err)
+				fmt.Printf("could not publish time: %v", err)
 			}
 		case "resume":
 			fmt.Println("Sending Resume message...")
@@ -64,7 +66,7 @@ func main() {
 				},
 			)
 			if err != nil {
-				fmt.Println("Could not publish message:", err)
+				fmt.Printf("could not publish time: %v", err)
 			}
 		case "quit":
 			fmt.Println("Exiting...")
