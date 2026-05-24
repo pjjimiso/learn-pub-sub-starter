@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -33,6 +35,14 @@ type SimpleQueueType int
 const (
 	SimpleQueueDurable SimpleQueueType = iota
 	SimpleQueueTransient
+)
+
+type AckType int
+
+const (
+	Ack AckType = iota
+	NackRequeue
+	NackDiscard
 )
 
 func DeclareAndBind(
@@ -80,30 +90,35 @@ func SubscribeJSON[T any](
 	queueName,
 	key string,
 	queueType SimpleQueueType,
-	handler func(T),
+	handler func(T) AckType,
 ) error {
 	c, _, err := DeclareAndBind(conn, exchange, queueName, key, queueType)
 	if err != nil {
 		return err
 	}
 
-	deliveries, err := c.Consume(queueName, "", false, false, false, false, nil)
+	messages, err := c.Consume(queueName, "", false, false, false, false, nil)
 	if err != nil {
 		return err
 	}
 
 	go func() {
-		for delivery := range deliveries {
+		for msg := range messages {
 			var target T
-			err := json.Unmarshal(delivery.Body, &target)
+			err := json.Unmarshal(msg.Body, &target)
 			if err != nil {
-				fmt.Printf("failed to unmarshal data: %v", err)
-				return
 			}
-			handler(target)
-			err = delivery.Ack(false)
-			if err != nil {
-				fmt.Printf("ack error: %v", err)
+			response := handler(target)
+			switch response {
+			case Ack:
+				msg.Ack(false)
+				log.Println("sent Ack response")
+			case NackDiscard:
+				msg.Nack(false, false)
+				log.Printf("sent NackDiscard response")
+			case NackRequeue:
+				msg.Nack(false, true)
+				log.Printf("sent NackRequeue response")
 			}
 		}
 	}()
