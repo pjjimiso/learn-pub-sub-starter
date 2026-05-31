@@ -35,14 +35,6 @@ func main() {
 		handlerWriteLog,
 	)
 
-	_, _, err = pubsub.DeclareAndBind(
-		conn,
-		routing.ExchangePerilTopic,
-		routing.GameLogSlug,
-		"game_logs.*",
-		pubsub.SimpleQueueDurable,
-	)
-
 	gamelogic.PrintServerHelp()
 
 	for {
