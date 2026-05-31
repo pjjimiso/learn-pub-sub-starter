@@ -63,7 +63,7 @@ func main() {
 		routing.WarRecognitionsPrefix,
 		routing.WarRecognitionsPrefix+".*",
 		pubsub.SimpleQueueDurable,
-		handlerWar(gs),
+		handlerWar(gs, channel),
 	)
 	if err != nil {
 		log.Fatalf("War subscription failed: %v", err)

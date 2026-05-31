@@ -26,6 +26,15 @@ func main() {
 		log.Fatalf("could not open channel: %v", err)
 	}
 
+	pubsub.SubscribeGob(
+		conn,
+		routing.ExchangePerilTopic,
+		routing.GameLogSlug,
+		routing.GameLogSlug+".*",
+		pubsub.SimpleQueueDurable,
+		handlerWriteLog,
+	)
+
 	_, _, err = pubsub.DeclareAndBind(
 		conn,
 		routing.ExchangePerilTopic,
