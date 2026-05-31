@@ -4,6 +4,8 @@ import (
 	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
+	"strconv"
+	"time"
 
 	"github.com/pjjimiso/learn-pub-sub-starter/internal/gamelogic"
 	"github.com/pjjimiso/learn-pub-sub-starter/internal/pubsub"
@@ -100,7 +102,26 @@ func main() {
 		case "help":
 			gamelogic.PrintClientHelp()
 		case "spam":
-			fmt.Println("Spamming not allowed yet!")
+			if len(input) <= 1 {
+				fmt.Println("usage: spam <number>")
+				continue
+			}
+			iter, err := strconv.Atoi(input[1])
+			if err != nil {
+				fmt.Printf("spam input invalid: %v", err)
+			}
+			for range iter {
+				PublishGameLog(
+					channel,
+					routing.ExchangePerilTopic,
+					routing.GameLogSlug+"."+gs.GetUsername(),
+					routing.GameLog{
+						CurrentTime: time.Now(),
+						Message:     gamelogic.GetMaliciousLog(),
+						Username:    gs.GetUsername(),
+					},
+				)
+			}
 		case "quit":
 			gamelogic.PrintQuit()
 			return

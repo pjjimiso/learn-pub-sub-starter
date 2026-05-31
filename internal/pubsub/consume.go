@@ -34,13 +34,19 @@ func subscribe[T any](
 	handler func(T) AckType,
 	unmarshaller func([]byte) (T, error),
 ) error {
-	c, _, err := DeclareAndBind(conn, exchange, queueName, key, queueType)
+	channel, _, err := DeclareAndBind(conn, exchange, queueName, key, queueType)
 	if err != nil {
 		return err
 	}
 
-	messages, err := c.Consume(queueName, "", false, false, false, false, nil)
+	err = channel.Qos(10, 0, false)
 	if err != nil {
+		return err
+	}
+
+	messages, err := channel.Consume(queueName, "", false, false, false, false, nil)
+	if err != nil {
+		fmt.Printf("consume failed: %v", err)
 		return err
 	}
 
